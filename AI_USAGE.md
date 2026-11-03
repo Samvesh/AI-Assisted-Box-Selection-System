@@ -1,55 +1,68 @@
 # AI Usage
 
-I used AI tools for this assignment. This file lists what they did, what I decided myself, and how I checked the result. The full conversations are in the exported chat transcript included in this repo.
+I used AI tools for this assignment. This file lists what they did, what I decided myself, and how the result was checked. The exported chats are in this repo, and where something here and a chat disagree, the chat is the record.
 
 ## 1. AI tools used
 
-- **Claude (claude.ai)**: read the assignment, helped me write the build prompt, advised on the cleanup pass, and drafted a shorter version of the README that I then edited.
-- **Google Antigravity, with Claude Opus 4.6**: generated the Django project (models, selector logic, API, tests, CI file, seed command, README draft). Opus 4.6 was the only Claude model available in Antigravity, so I used that.
+- **Google Antigravity, with Claude Opus 4.6.** Generated the Django project: models, selector logic, API, tests, CI file, seed command and a first README. Opus 4.6 was the only Claude model available in Antigravity, so I used that. I also used it for the cleanup, the git push, and to export its own session log as `CHAT_TRANSCRIPT.md`.
+- **Claude (claude.ai).** Read the assignment with me, helped me write the build prompt for Antigravity, advised on the cleanup and git steps, drafted a shorter README and a first draft of this file.
 
-## 2. Prompts I used (summary)
+## 2. Prompts I gave
 
-1. **Build prompt.** A long, detailed prompt covering the stack (Django, DRF, pytest, Ruff, GitHub Actions), the four models, the box-selection rules (weight, rotation, volume, cheapest first, deterministic tie-break), the API endpoints, edge cases, seed data, test requirements and CI. It also told Antigravity **not** to write AI_USAGE.md, the transcript or my learnings.
-2. **Run the server** so I could try the endpoints.
-3. **Cleanup prompt.** Remove dead code, unused imports and redundant comments without changing behaviour, re-run ruff and tests, and list every change so I could review it.
-4. **Targeted removal prompt.** Remove four specific unused members (see section 4), grep for usages first, remove the related tests, and re-run everything.
+Antigravity session (9 turns, 2026-11-02 and 2026-11-03, see `CHAT_TRANSCRIPT.md`):
 
-The exact wording is in the transcript.
+1. **Build prompt.** One long prompt covering the stack (Django, DRF, pytest, Ruff, GitHub Actions), the four models, the box-selection rules, API endpoints, edge cases, seed data, test requirements and CI. It told Antigravity not to write AI_USAGE.md, a transcript, or my learnings. The prompt was written with Claude's help.
+2. **"continue from it left"** (and later "continue from you left", twice). Antigravity stopped partway through a task and I had to tell it to carry on.
+3. **"now run this locally"**, to start the dev server.
+4. **Cleanup prompt.** Remove dead code, unused imports and redundant comments without changing behaviour, re-run ruff and tests, and list every change.
+5. **Targeted removal prompt.** Remove `Product.volume`, `Product.sorted_dims`, `Box.sorted_dims` and the standalone `OrderItemAdmin`; grep for usages first; remove tests that only covered them; re-run everything.
+6. **Git push.** I gave it the repo URL and asked it to put everything on GitHub.
+7. **Transcript.** I asked it to make a transcript file of the chat. It wrote a small script that converts its own session log into `CHAT_TRANSCRIPT.md`.
+
+Claude chat (exported separately as `CLAUDE_CHAT_TRANSCRIPT.md` [TODO: use your real filename]): the prompts I gave Claude were about the assignment, the Antigravity build prompt, model choice, the cleanup prompt, the README, this file, and the GitHub steps.
 
 ## 3. What the AI produced and I accepted
 
-- The overall structure: `Product`, `Box`, `Order`, `OrderItem` models, validators and DB constraints.
-- The selector service in `packing/services/box_selector.py` (rotation check, shelf/layer packing heuristic, cheapest-then-smallest-then-lowest-id selection).
-- The DRF endpoints, serializers, seed command, CI workflow and the first set of 52 tests.
-- The cleanup results: removed the unused `_layer_pack()` function (about 81 lines), an unused `placed_count` variable, a pointless `200 if fits else 200` conditional, a redundant `validate_items()` (DRF's `allow_empty=False` already covers it), and repeated docstrings and divider comments.
+- The overall structure: `Product`, `Box`, `Order`, `OrderItem`, validators and DB constraints.
+- The selector in `packing/services/box_selector.py` (rotation check, shelf/layer packing heuristic, cheapest, then smallest, then lowest-id selection).
+- The DRF endpoints, serializers, seed command, CI workflow and the first 52 tests.
+- The cleanup results: removed the unused `_layer_pack()` function, an unused `placed_count` variable, a leftover dangling `Decimal("0")` line, a `200 if fits else 200` conditional, the redundant `validate_items()` (DRF's `allow_empty=False` already covers it), and repeated docstrings and divider comments.
 
-## 4. What I changed or decided myself
+## 4. What I decided or changed myself
 
-- Reviewed the list of "candidate dead code" the AI left for me and **decided to remove** `Product.volume`, `Product.sorted_dims`, `Box.sorted_dims` and the standalone `OrderItemAdmin`. A grep showed they were only used by one test or not at all, and the order items are still editable through `OrderItemInline`. I had the related tests removed, so the suite went from 52 to 51 tests.
-- Chose to keep `Box.volume` because the selection logic and its test use it.
-- Edited the README into my own wording. [TODO: say what you rewrote]
-- [TODO: add anything else you changed in the code or tests yourself, for example a new test or edge case]
+- After the cleanup, Antigravity listed some members as "candidates" and left them in. It even said the model properties were "reasonable" to keep. I decided to remove `Product.volume`, `Product.sorted_dims`, `Box.sorted_dims` and the standalone `OrderItemAdmin`. A grep showed they were only used by one test or not at all, and order items are still editable through `OrderItemInline`. The suite went from 52 to 51 tests.
+- I kept `Box.volume`, because the selection logic and a test use it.
+- Chose Opus 4.6 because nothing newer was available in Antigravity.
+- README: [TODO: say whether you used Claude's shorter README or kept Antigravity's, and what you edited yourself]
+- [TODO: add anything else you changed yourself, for example a test or edge case]
 
 ## 5. Mistakes found
 
-AI mistakes (reported by Antigravity during the build, and fixed):
+By the AI, in the Antigravity session:
 
-1. Serializer used `decimal_places=2` for volume, but computed volumes can have more decimals. Changed to 6.
-2. Used the deprecated `check=` argument in Django `CheckConstraint`. Changed to `condition=` after the warnings appeared.
-3. Used `l` as a variable name, which Ruff flags as ambiguous (E741). Renamed.
-4. Left dead code behind (see section 3), found in the cleanup pass.
+1. The serializer used `decimal_places=2` for volumes, but computed volumes can have more decimals. Changed to 6.
+2. It used the deprecated `check=` in Django `CheckConstraint`. Changed to `condition=` after the warnings.
+3. It used `l` as a variable name, which Ruff flags (E741). Renamed to `pl` / `ln`.
+4. Its first command failed because it used `&&` in PowerShell, then it switched to `;`.
+5. It ran `ruff --fix --unsafe-fixes`, which removed an unused variable and left a dangling `Decimal("0")` line behind. The cleanup pass caught it.
+6. It left dead code in (`_layer_pack`, `placed_count`, the ternary and the redundant `validate_items`).
+7. It pushed everything as a single commit.
 
-Also, the explanation text in the API response shows volumes like `6000.000000 cm³`, which looks untidy. [TODO: say if you fixed this or left it]
+Also: the explanation text in the API response shows volumes like `6000.000000 cm³`, which looks untidy. [TODO: say if you fixed it or left it]
 
-Mistake in the advice I got: I was told newer Claude models might be available in Antigravity. They were not, so I used Opus 4.6.
+By the AI in the Claude chat: I was told newer Claude models might be available in Antigravity. They were not. An earlier draft of this file also said I had checked some response numbers by hand, but it was Claude that checked them; I only looked at the response in the browser.
 
-## 6. How I verified it
+## 6. How it was verified
 
-- Ran `pytest` (52 tests at first, 51 after removing the unused helpers) and `ruff check .`. Output is in `TEST_OUTPUT.md`.
-- Ran the server and opened the API root and `/api/orders/DEMO-001/recommend-box/`. I checked the numbers by hand: 2394 / 6000 = 39.9% utilisation, and "Small Mailer" was correctly rejected because the book (24 x 16 x 3 cm) does not fit in it.
-- Before deleting code I had the AI grep the project for every usage first.
-- [TODO: only keep the lines below if you actually did them]
-  - Read the selector code and the full `git diff` of the cleanup.
-  - Tried a bad request: unknown SKU / empty items / very large quantity.
+- `pytest` (52 tests at first, 51 after removing the unused members) and `ruff check .` were run by Antigravity. Output is in `TEST_OUTPUT.md`.
+- I started the server and opened the API root and `/api/orders/DEMO-001/recommend-box/` in the browser. In the response, 2394 / 6000 = 39.9% utilisation matched, and "Small Mailer" was rejected because the book (24 x 16 x 3 cm) does not fit.
+- Before deleting code, Antigravity grepped the project for every usage.
+- [TODO: keep only the lines you really did]
+  - Read the selector code and the `git diff` of the cleanup.
+  - Tried a bad request: unknown SKU, empty `items`, or a very large quantity.
   - Opened `/admin/` and added an order item through the inline.
   - Checked that no cheaper box than the recommended one could fit the demo order.
+
+## 7. A note on the transcripts
+
+`CHAT_TRANSCRIPT.md` is the Antigravity session, converted from its own session log by a script that Antigravity wrote at my request. My prompts in it are word for word. Tool calls are shown as short summaries, not full output. The raw log is `transcript_full.jsonl` [TODO: add it to the repo if you want, or delete this sentence]. The Claude chat is exported separately.
