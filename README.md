@@ -2,7 +2,7 @@
 
 A small Django REST API that picks the cheapest shipping box for an order. You give it the items (SKU + quantity), it checks weight and size against the active boxes and tells you which box to use, or why nothing fits.
 
-I built this as a take-home assignment. I used an AI coding tool for parts of it, and what it did and what I changed is written down in `AI_USAGE.md`.
+I built this as a take-home assignment. Most of the code was generated with Antigravity (Claude Opus 4.6). I ran the tests, tried the API, and decided what to remove during the cleanup. What the AI did and what I did is written down in `AI_USAGE.md`, and the full chat is in `CHAT_TRANSCRIPT.md`.
 
 ## Setup
 
